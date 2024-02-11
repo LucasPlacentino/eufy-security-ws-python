@@ -12,7 +12,9 @@ CONTAINER_ID = "eufy_security_ws"
 
 _LOGGER = logging.getLogger()
 
-STATIONS = "000000:192.168.1.125" #format is SN:IP
+DEVICE_IP: str = "192.168.1.125"
+DEVICE_SN: str = "000000"
+#STATIONS = "000000:192.168.1.125" #format is SN:IP
 
 async def main() -> None:
     #TODO:
@@ -25,7 +27,7 @@ async def main() -> None:
             "COUNTRY={}".format(os.getenv("COUNTRY_CODE", "DE")),
             "LANGUAGE={}".format(os.getenv("LANGUAGE_CODE", "en")),
             "ACCEPT_INVITATIONS={}".format(os.getenv("ACCEPT_INVITATIONS", "false")),
-            "STATION_IP_ADRESSES={}".format(STATIONS),
+            #"STATION_IP_ADRESSES={}".format(STATIONS),
             "PORT={}".format(os.getenv("CONTAINER_WS_PORT", "3000"))
             ],
         image="bropat/eufy_security_ws",
@@ -47,7 +49,27 @@ async def main() -> None:
             return
 
         driver_ready = asyncio.Event()
-        await client.async_listen(driver_ready)
+        _LOGGER.debug(await client.async_listen(driver_ready))
+
+        res = await client.async_send_command(
+            {
+                "command": "device.get_properties",
+                "serialNumber": DEVICE_SN,
+            },
+            require_schema=0
+        )
+        _LOGGER.debug(res)
+
+        await client.async_send_command(
+            {
+                "command": "device.set_property",
+                "serialNumber": DEVICE_SN,
+                "name": "properrty_name",
+                "value": "value",
+            },
+            require_schema=0
+        )
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
